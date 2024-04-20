@@ -56,7 +56,8 @@ class Controller:
         assert ( a2 in range(0, 181)), f"a1 not in servo range [0,180]. actual: {a2}"
         assert ( a2 in range(0, 181)), f"a1 not in servo range [0,180]. actual: {a2}"
 
-        assert ( a1 + a2 < 1801)
+        #stretch and scissor conditions
+        #assert ( a1 + a2 < 1801)
         
 
     def send_signal(self, a1, a2, a3, mag):
