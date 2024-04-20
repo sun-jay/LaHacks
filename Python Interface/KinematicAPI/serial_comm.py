@@ -47,6 +47,14 @@ class Controller:
         time.sleep(2)
         print("Connected to serial")
 
+    def send_signal(self, angles):
+        s = self.array_to_string(angles)
+        self.ser.write(s.encode())
+        
+
+
+        
+
     def close_connection(self):
         self.ser.close()
         print("Connection closed")
