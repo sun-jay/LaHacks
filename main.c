@@ -72,9 +72,9 @@ int mag;
 
 void parse_input_chars()
 {
-	char ca1[3];
-	char ca2[3];
-	char ca3[3];
+	char ca1[4];
+	char ca2[4];
+	char ca3[4];
 
 	char cmag = '0';
 
@@ -87,14 +87,19 @@ void parse_input_chars()
 	ca1[0] = rec_arr[0];
 	ca1[1] = rec_arr[1];
 	ca1[2] = rec_arr[2];
+	ca1[3] = '\0';
 
 	ca2[0] = rec_arr[4];
 	ca2[1] = rec_arr[5];
 	ca2[2] = rec_arr[6];
+	ca2[3] = '\0';
+
 
 	ca3[0] = rec_arr[8];
 	ca3[1] = rec_arr[9];
 	ca3[2] = rec_arr[10];
+	ca3[3] = '\0';
+
 
 	a1 = atoi(ca1);
 	a2 = atoi(ca2);
@@ -109,6 +114,23 @@ void parse_input_chars()
 void move_motors()
 {
 	// change channel duty cycle by changing TIM1->CCRx Register Value
+	// 5%  DC ---   1000  ---  0   deg
+	// 12% DC ---	2400  ---  180 deg
+
+	// 5%  DC ---   700  ---  0   deg
+	// 12% DC ---	2300  ---  180 deg
+	int mintick = 690;
+	int maxtick = 2565;
+	float ticks_per_deg = (maxtick - mintick)/180.0;
+
+
+	int t1 = mintick + (ticks_per_deg * a1);
+	int t2 = mintick + (ticks_per_deg * a2);
+	int t3 = mintick + (ticks_per_deg * a3);
+
+	TIM1->CCR1 = t1;
+	TIM1->CCR2 = t2;
+	TIM1->CCR3 = t3;
 
 
 }
@@ -154,21 +176,43 @@ int main(void)
 
   char start_msg[100] = "UART CONNECTED. Success.";  							//24 char
   char query[100] = "Provide XXX YYY ZZZ M (as 13 consecuctive chars):";		//49 char
+  char eol[2] = "\n\r";
 
 
+  int m1_safe = 1000;
+  int m2_safe = 1000;
+  int m3_safe = 1000;
 
-  HAL_UART_Transmit(huart2, start_msg, 24, 1000);
+	TIM1->CCR1 = m1_safe;
+	TIM1->CCR2 = m2_safe;
+	TIM1->CCR3 = m3_safe;
+
+	//HAL_StatusTypeDef HAL_TIM_PWM_Start(TIM_HandleTypeDef *htim, uint32_t Channel)
+
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+
+  HAL_UART_Transmit(&huart2, start_msg, 24, 1000);
+  HAL_UART_Transmit(&huart2, eol, 2, 1000);
+
 
   /* USER CODE END 2 */
-
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_UART_Transmit(huart2, query, 49, 1000);
-	  HAL_UART_Receive(huart2, rec_arr, 13, 10000);
-	  HAL_UART_Transmit(huart2, rec_arr, 13, 1000);
+	  HAL_UART_Transmit(&huart2, query, 49, 1000);
+	  HAL_UART_Transmit(&huart2, eol, 2, 1000);
+
+	  HAL_UART_Receive(&huart2, rec_arr, 13, 10000);
+
+	  HAL_UART_Transmit(&huart2, rec_arr, 13, 1000);
+	  HAL_UART_Transmit(&huart2, eol, 2, 1000);
+
+	  parse_input_chars();
+	  move_motors();
 
     /* USER CODE END WHILE */
 
@@ -239,6 +283,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 0 */
 
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
   TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
@@ -253,6 +298,15 @@ static void MX_TIM1_Init(void)
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
