@@ -100,7 +100,7 @@ class Controller:
         time.sleep(0.1)
 
 
-    def servo_angs_to_dh_angs(sa1, sa2, sa3):
+    def servo_angs_to_dh_angs(self, sa1, sa2, sa3):
 
         #map sa1 from [0, 180]  --->  [-90 90]
         dh1 = sa1 - 90
@@ -111,6 +111,8 @@ class Controller:
         #map sa3 from [0,180] ----> [0, -180]
         dh3 = -dh2 + (sa3 - 180)
 
+        return dh1, dh2, dh3
+
 if __name__ == "__main__":
     try: 
         manip = Controller()
@@ -118,6 +120,10 @@ if __name__ == "__main__":
 
         while(True):
             a1,a2,a3,M = [int(i) for i in input("Enter 3 angles and mag: 'a1 a2 a3 M': ").strip().split()]
+            
+            d1,d2,d3 = manip.servo_angs_to_dh_angs(a1,a2,a3)
+            print(d1,d2,d3)
+            
             manip.send_signal(a1,a2,a3,M)
     except AssertionError as e:
         print(e)

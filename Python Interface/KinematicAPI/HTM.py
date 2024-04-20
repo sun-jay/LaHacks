@@ -68,20 +68,23 @@ def make_htm(theta0, theta1, theta2):
     H2_3 = np.concatenate( (  H2_3, [[0,0,0,1]]  ), 0)
 
 
-    H0_3 = H0_1 @ H1_2 @ H2_3
+    H0_3 = (H0_1 @ H1_2) @ H2_3
 
-    print(H0_3)
+    #print(H0_3)
 
     # with built in x <--> y transformation swap
     return {'x':-H0_3[1,3], 'y': H0_3[0,3], 'z': H0_3[2,3]}
 
 def get_xyz(t1d, t2d, t3d):
     t1r, t2r, t3r = [deg_to_rad(t) for t in [t1d, t2d, t3d]]
+
+
+
     xyz_dict = make_htm(t1r, t2r, t3r)
 
     return xyz_dict
 
 
 if __name__ == "__main__":
-    d = get_xyz(45, 0, 0)
+    d = get_xyz(45, 45, -45)
     print(d)
