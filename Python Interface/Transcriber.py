@@ -76,7 +76,7 @@ class Transcriber():
                 min_time_reached = True
 
             # Debug output (optional, can be commented out in production)
-            if frame_count % 10 == 0 and self.verbose:
+            if frame_count % 2 == 0 and self.verbose:
                 print(f"Frame {frame_count}: RMS={rms}, Quiet Frames Count={quiet_frame_count}")
 
         # Save the recorded audio to a file
@@ -119,7 +119,7 @@ class Transcriber():
                 if self.constant_print:
                     print(result["text"])
 
-                self.full_text = result["text"]
+                self.full_text += result["text"]
 
                 temp = self.full_text.lower()
                 if "assistant" in temp and "over" in temp:
@@ -144,7 +144,7 @@ class Transcriber():
 
 if __name__ == "__main__":
     # clear ./audios
-    transcriber = Transcriber(constant_print=False)
+    transcriber = Transcriber(constant_print=True, quiet_threshold=2000, verbose=True)
 
     for i in os.listdir("./audios"):
         os.remove("./audios/" + i)
