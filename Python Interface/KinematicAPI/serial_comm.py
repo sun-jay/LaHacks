@@ -20,6 +20,11 @@ class Controller:
         # one liner
         return " ".join([str(i).zfill(3) for i in self.current_position]) + '0' + str(self.mag)
 
+
+
+
+
+    ############ PUBLIC DOMAIN BELOW  ################
         
     def connect(self):
         options = os.listdir("/dev")
@@ -65,7 +70,7 @@ class Controller:
         #scissor condition -- min angle bw a2 & a3
         normalized_a3 = (-a3 +180)
         assert (   abs(normalized_a3 - a2) >  40  ), f"Scissor Condition Violated: a2: {a2}, a3: {a3}."
-        assert (  normalized_a3 < a2 ), f"Scissor Condition Violated: a2: {a2}, a3: {a3}."
+        assert (  normalized_a3 < a2 ), f"Arm-Order Condition Violated: a2: {a2}, a3: {a3}."
 
     def send_signal(self, a1, a2, a3, mag):
 
@@ -95,8 +100,17 @@ class Controller:
         time.sleep(0.1)
 
 
+    def servo_angs_to_dh_angs(sa1, sa2, sa3):
 
-        
+        #map sa1 from [0, 180]  --->  [-90 90]
+        dh1 = sa1 - 90
+
+        #map sa2 from [0,180] ----> [180, 0]
+        dh2 = 180 - sa2
+
+        #map sa3 from [0,180] ----> [0, -180]
+        dh3 = -dh2 + (sa3 - 180)
+
 if __name__ == "__main__":
     try: 
         manip = Controller()

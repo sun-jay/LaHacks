@@ -34,6 +34,7 @@ def get_dh_angles_for_coord(x,y,z):
 
     a1, a2, a3 = [ int(ang) for ang in closest_angles_str.split()]
     a1 /= 2
+    a1 = int(a1)
 
     return a1, a2, a3
 
@@ -41,8 +42,7 @@ def get_dh_angles_for_coord(x,y,z):
 
 if __name__ == "__main__":
 
-    angle_str = get_dh_angles_for_coord(0, 10, 10)
-    a1, a2, a3 = [ int(ang) for ang in angle_str.split()]
-    a1 /= 2
+    angles= get_dh_angles_for_coord(7, 15, 0)
+    a1, a2, a3 = angles
 
     print(a1,a2,a3)
