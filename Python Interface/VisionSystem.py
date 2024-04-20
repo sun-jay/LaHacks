@@ -17,35 +17,99 @@ class VisionSystem:
                 break
         cv2.destroyAllWindows()
 
-    def create_mask_for_color(self, image, color):
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    
+    def apply_masks_on_image(self,image, masks, color=(255, 0, 255)):
+        # Check if image is a string (file path) and load it
+        if isinstance(image, str):
+            image = cv2.imread(image)
 
-        color_lower = np.array([color[0] - 10, color[1] - 10, color[2] - 10], dtype="uint8")
-        color_upper = np.array([color[0] + 10, color[1] + 10, color[2] + 10], dtype="uint8")
-        mask = cv2.inRange(image_rgb, color_lower, color_upper)
-        
-        return mask
+        # Convert image to RGB for color overlay if it's not already
+        if len(image.shape) == 2 or image.shape[2] == 1:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-    def apply_pink_mask(self, image, mask, alpha=0.5):
-        # Ensure the mask is in binary format
-        mask_binary = cv2.threshold(mask, 1, 255, cv2.THRESH_BINARY)[1]
-        
-        # Create an all-pink image of the same dimensions as the original image
-        pink_overlay = np.zeros_like(image)
-        pink_overlay[:] = (180, 105, 255)  # BGR for pink
+        # Overlay each mask on the image
+        for mask in masks:
+            # Create a color overlay where the mask is applied
+            overlay = np.zeros_like(image, dtype=np.uint8)
+            overlay[mask == 255] = color
 
-        # Use the binary mask to create the overlay with the pink color only in the mask area
-        pink_mask = cv2.bitwise_and(pink_overlay, pink_overlay, mask=mask_binary)
+            # Blend the overlay with the original image
+            image = cv2.addWeighted(image, 1, overlay, 0.85, 0)
 
-        # Blend the pink mask and the original image
-        image_with_mask = cv2.addWeighted(image, 1 - alpha, pink_mask, alpha, 0)
+        return image
 
-        return image_with_mask
+    def create_individual_masks(self,image):
 
+        # Convert image to RGB color space from BGR
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        # Define range of green color in RGB
+        lower_green = np.array([184,198,121]) - 60
+        upper_green = np.array([216,225,156]) + 60
+
+        # Threshold the RGB image to get only green colors
+        mask = cv2.inRange(rgb, lower_green, upper_green)
+        # Invert the mask to get non-green objects
+        mask_inv = cv2.bitwise_not(mask)
+
+        # Find contours on the inverted mask
+        contours, _ = cv2.findContours(mask_inv, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Create an array to hold masks for each contour
+        masks = []
+
+        # Generate a mask for each contour that meets the area threshold
+        for contour in contours:
+            if cv2.contourArea(contour) > 220:  # Filtering condition based on the area
+                # Create a blank mask with the same dimensions as the original image
+                temp_mask = np.zeros_like(mask_inv)
+                # Draw the contour on the mask
+                cv2.drawContours(temp_mask, [contour], -1, 255, thickness=cv2.FILLED)
+                # Add the mask to the list
+                masks.append(temp_mask)
+
+        # Return the array of masks
+        return masks
     
 
 
-        
+    def ret_centroids(self, masks):
+        centroids = []
+        for mask in masks:
+            # Find contours in the mask
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            # Calculate the centroid for each contour
+            for contour in contours:
+                M = cv2.moments(contour)
+                if M["m00"] != 0:
+                    cx = int(M["m10"] / M["m00"])
+                    cy = int(M["m01"] / M["m00"])
+                    centroids.append((cx, cy))
+                else:
+                    # In case of zero division error
+                    centroids.append((0, 0))
+        return centroids
+
+
+    def plot_centroids(self, image, centroids):
+        # Ensure the image is in color to plot colored dots (centroids)
+        if len(image.shape) == 2 or image.shape[2] == 1:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
+        # Draw a circle and annotate for each centroid
+        for index, (cx, cy) in enumerate(centroids):
+            # Draw a white circle at each centroid
+            cv2.circle(image, (cx, cy), 5, (255, 255, 255), -1)
+            # Prepare text for annotation
+            label = f"({cx}, {cy})"
+            # Position the text near the centroid
+            text_position = (cx + 10, cy)
+            # Draw the text on the image
+            cv2.putText(image, label, text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+
+        return image
+
 
 
 if __name__ == '__main__':
@@ -53,10 +117,19 @@ if __name__ == '__main__':
     # make a custom display loop
     while True:
         ret, frame = vision_system.stream.read()
+
         if not ret:
             break
-        mask = vision_system.create_mask_for_color(frame, (211,225,147))
-        frame_with_mask = vision_system.apply_pink_mask(frame, mask)
+        # mask = vision_system.create_mask_for_color(frame, (211,225,147))
+        masks = vision_system.create_individual_masks(frame)
+        frame = vision_system.apply_masks_on_image(frame, masks)
+        centroids = vision_system.ret_centroids(masks)
+        frame = vision_system.plot_centroids(frame, centroids)
+        cv2.imshow('Stream', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cv2.destroyAllWindows()
 
 
         
