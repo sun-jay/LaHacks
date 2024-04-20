@@ -14,7 +14,7 @@ class Controller:
 
     def array_to_string(self, arr):
 
-        # string must look like  "iii iii iii". it must be 11 characters long, all angles will be 1-3 digits, so we need to pad with zeros
+        # string must look like  "iii iii iii i". it must be 13 characters long, all angles will be 1-3 digits, so we need to pad with zeros
 
         # one liner
         return " ".join([str(i).zfill(3) for i in arr])
