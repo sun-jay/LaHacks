@@ -6,6 +6,26 @@ from ThreadStream import ThreadStream
 class VisionSystem:
     def __init__(self):
         self.stream = ThreadStream()
+        self.affine_matrix = None
+
+    def create_affine_matrix(self):
+        vision_coords = np.array([[0, 0], [0, 1], [1, 0]])
+        kinematics_coords = np.array([[0, 0], [0, 480], [640, 0]])
+
+        self.affine_matrix = cv2.getAffineTransform(vision_coords, kinematics_coords)
+
+    def vision_to_kinematics(self, vision_coords):
+        if self.affine_matrix is None:
+            self.create_affine_matrix()
+
+        return cv2.transform(np.array([vision_coords]), self.affine_matrix)[0]
+    
+    def kinematics_to_vision(self, kinematics_coords):
+        if self.affine_matrix is None:
+            self.create_affine_matrix()
+
+        return cv2.transform(np.array([kinematics_coords]), np.linalg.inv(self.affine_matrix))[0]
+
 
     def show_stream(self):
         while True:
