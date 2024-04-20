@@ -8,20 +8,23 @@ import os
 import time
 import audioop
 
+from uagents import Model
+from uagents.context import send_sync_message
 
 # class that can start two threads, one that records and one that transcibres
 
+class Transcript(Model):
+    transcript: str
+
 class Transcriber():
-    def __init__(self, constant_print = False, verbose = False ,chunk_time=2.5,quiet_threshold=1000, frame_size=8000):
+    def __init__(self, constant_print = False, verbose = False, chunk_time=2.5,quiet_threshold=3000, frame_size=8000):
         self.constant_print = constant_print
         self.verbose = verbose
-        self.chunk_time = chunk_time
 
         self.chunk_time = chunk_time
         self.quiet_threshold = quiet_threshold  # RMS threshold to consider a frame as quiet
         self.frame_size = frame_size  # Number of samples per frame
         self.sample_rate = 16000  # Sample rate in Hz
-
 
         self.device =  "mps"
         self.torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
@@ -91,7 +94,6 @@ class Transcriber():
             print(f"Recording saved to {audio_file}. Total frames recorded: {frame_count}")
 
 
-
     def record_thread(self):
         ind = 0
         p = pyaudio.PyAudio()
@@ -119,12 +121,12 @@ class Transcriber():
                 if self.constant_print:
                     print(result["text"])
 
-                self.full_text = result["text"]
+                self.full_text += result["text"]
 
                 temp = self.full_text.lower()
                 if "assistant" in temp and "over" in temp:
                     # set the current command to the text in between assistant and over
-                    self.current_command = temp[temp.index("assistant")+len("assistant"):temp.index("over")]
+                    self.current_command = temp[temp.index("assistant")+len("assistant")+2:temp.index("over")]
                     self.full_text = ""
 
 
@@ -139,56 +141,27 @@ class Transcriber():
 
     def start(self):
         threading.Thread(target=self.record_thread).start()
-        threading.Thread(target=self.transcribe_thread).start()   
+        threading.Thread(target=self.transcribe_thread).start()  
 
+    async def main_process(self):
+        for i in os.listdir("./audios"):
+            os.remove("./audios/" + i)
+        self.start()
+        prev = None
+        while True:
+            time.sleep(0.5)
+            print("Current command:", self.current_command)
+            if prev != self.current_command:
+                print("Current command:", self.current_command)
+                prev = self.current_command
+                await send_sync_message(
+                    destination = "agent1qw5lhj7vyzlcwd4k8q48v6mpgxnu4glx4hduz0mctpj7ejua6mt0v68huhk", message = Transcript(transcript = self.current_command)
+                )
+                print("after async")
 
+import asyncio
+
+# Use asyncio to run the above async function
 if __name__ == "__main__":
-    # clear ./audios
-    transcriber = Transcriber(constant_print=False)
-
-    for i in os.listdir("./audios"):
-        os.remove("./audios/" + i)
-    transcriber.start()
-
-    prev = None
-    while True:
-        time.sleep(0.5)
-        print("Current command:", transcriber.current_command)
-        # if prev != transcriber.current_command:
-        #     print("Current command:", transcriber.current_command)
-        #     prev = transcriber.current_command
-        
-    # transcriber.record_thread()
-
-
-
-    # transcriber.transcribe()
-
-
-    # while True:
-    #     pass
-
-    # res = transcriber.pipe("./audios/0.wav")
-
-    # print(res["text"])  
-
-
-# p = pyaudio.PyAudio()
-# stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8000)
-# frames = []
-# for i in range(0, int(16000 / 8000 * 5)):
-#     data = stream.read(8000)
-#     frames.append(data)
-# stream.stop_stream()
-# stream.close()
-# p.terminate()
-
-# print("Processing...")
-
-# audio_file = "./audios/recording.wav"
-# wf = wave.open(audio_file, "wb")
-# wf.setnchannels(1)
-# wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
-# wf.setframerate(16000)
-# wf.writeframes(b"".join(frames))
-# wf.close()
+    test_class = Transcriber(constant_print=False, verbose = True)
+    asyncio.run(test_class.main_process())

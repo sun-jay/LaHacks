@@ -1,7 +1,46 @@
+# vision system address is ejua6mt0v68huhk
+
+from uagents import Agent, Context, Model
 import cv2
 import numpy as np
-
 from ThreadStream import ThreadStream
+from PIL import Image
+
+class Transcript(Model):
+    transcript: str
+
+visionSystemAgent = Agent(
+    name = "VisionSystemAgent",
+    seed = "Vision system complex secret phrase",
+    port = "8000",
+    endpoint = ["http://0.0.0.0:8000/submit"]
+)
+
+@visionSystemAgent.on_message(model = Transcript)
+async def transcript_handler(ctx: Context, sender:str, msg: Transcript):
+    visionSystem = VisionSystem()
+    ctx.logger.info("handler hit")
+    ctx.logger.info(f"Received message from {sender}: {msg.transcript}")
+    while True:
+        ret, frame = visionSystem.stream.read()
+        if not ret:
+            break
+        # mask = vision_system.create_mask_for_color(frame, (211,225,147))
+        masks = visionSystem.create_individual_masks(frame)
+        frame = visionSystem.apply_masks_on_image(frame, masks)
+        centroids = visionSystem.ret_centroids(masks)
+        frame = visionSystem.plot_centroids(frame, centroids)
+        cv2.imshow('Stream', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+        
+
+    cv2.destroyAllWindows()
+    img = Image.fromarray(frame, "RGB")   
+
+    
+    
+    # await ctx.send(sender, Transcript(transcript=""))
 
 class VisionSystem:
     def __init__(self):
@@ -90,8 +129,6 @@ class VisionSystem:
 
         # Return the array of masks
         return masks
-    
-
 
     def ret_centroids(self, masks):
         centroids = []
@@ -129,30 +166,9 @@ class VisionSystem:
             cv2.putText(image, label, text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
 
         return image
+    
+import asyncio
 
-
-
-if __name__ == '__main__':
-    vision_system = VisionSystem()
-    # make a custom display loop
-    while True:
-        ret, frame = vision_system.stream.read()
-
-        if not ret:
-            break
-        # mask = vision_system.create_mask_for_color(frame, (211,225,147))
-        masks = vision_system.create_individual_masks(frame)
-        frame = vision_system.apply_masks_on_image(frame, masks)
-        centroids = vision_system.ret_centroids(masks)
-        frame = vision_system.plot_centroids(frame, centroids)
-        cv2.imshow('Stream', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cv2.destroyAllWindows()
-
-
-        
-
-
-
+# Use asyncio to run the above async function
+if __name__ == "__main__":
+    visionSystemAgent.run()
