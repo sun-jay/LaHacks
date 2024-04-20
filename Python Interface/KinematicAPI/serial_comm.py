@@ -65,5 +65,12 @@ class Controller:
         
 if __name__ == "__main__":
     c = Controller()
-    print(c.array_to_string([1,2,3]))
+    try: 
+        c.send_signal([90,90,90])
+        time.sleep(1)
+        c.send_signal([0,0,0])
+        time.sleep(1)
+        c.send_signal([90,90,90])
+    finally:
+        c.close_connection()
     
