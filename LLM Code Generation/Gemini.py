@@ -5,7 +5,15 @@ import numpy as np
 import io
 import pyaudio
 import requests
+import time
+
 from uagents import Agent, Context, Model
+
+from ..PythonInterface.KinematicAPI import serial_comm as sc 
+from ..PythonInterface.KinematicAPI import inverse_kinematics 
+
+
+
 
 class GeminiContext(Model):
     user_transcript: str
@@ -19,6 +27,10 @@ geminiCodeGenAgent = Agent(
 )
 
 gemini = None
+manip = sc.Controller()
+manip.connect()
+manip.send_signal(6,130,106,0)
+time.sleep(1)
 
 print(geminiCodeGenAgent.address)
 
@@ -31,29 +43,29 @@ async def configureGemini(ctx: Context):
 
 @geminiCodeGenAgent.on_message(model = GeminiContext)
 async def gemini_codegen_handler(ctx: Context, sender: str, msg: GeminiContext):
-    global gemini
+    global gemini, manip
     ctx.logger.info(f"Received message from {sender}: {msg.user_transcript}")
 
     controller_api_prompt = """heres how to use a robot arm API. use the pick_and_drop function. all coords are in mm, z=0 is ground level.
   #implementation in class, coords must be lists of 2 ints
   def pick_and_drop(self, pick_coords, drop_coords):
     # Go to 50 mm above the pick-up point
-    self.calc_and_go_to_point(pick_coords + [50], magnet=False)
+    go_to_coords(pick_coords + [50], magnet=False)
     time.sleep(3)
     # Drop to 15 mm above the pick-up point and wait for 3 seconds
-    self.calc_and_go_to_point(pick_coords + [10], magnet=True)
+    go_to_coords(pick_coords + [10], magnet=True)
     time.sleep(2)
     # raise up to 50 mm above the pick-up point
-    self.calc_and_go_to_point(pick_coords + [50], magnet=True)
+    go_to_coords(pick_coords + [50], magnet=True)
     time.sleep(1)
     # Go to 50 mm above the drop-off point
-    self.calc_and_go_to_point(drop_coords + [50], magnet=True)
+    go_to_coords(drop_coords + [50], magnet=True)
     time.sleep(3)
     # Drop to 15 mm above the drop-off point
-    self.calc_and_go_to_point(drop_coords + [15], magnet=True)
+    go_to_coords(drop_coords + [15], magnet=True)
     time.sleep(2)
     # Release the object by turning off the magnet
-    self.calc_and_go_to_point(drop_coords + [15], magnet=False)
+    go_to_coords(drop_coords + [15], magnet=False)
     time.sleep(2)
 : You are provided with a birds-eye view image of the workspace, with the centroids of the object marked as points where you interact with the objects. assume all imports and functions are already defined in the context. using this API, write the lines of python that will complete this task: {prompt}. use self.pick_and_drop(params) because this code will be running in a the class. Your response should have ONLY the python code. DO NOT define functions, just write the script out. The entirety of your response will be evaluated directly by an interpreter. use breif comments to show your plan."""
 
@@ -72,7 +84,46 @@ async def gemini_codegen_handler(ctx: Context, sender: str, msg: GeminiContext):
 
     response = gemini.generate_content([full_prompt, Image.open(img_byte_arr)])
     ctx.logger.info(response.text)
+
+    generated_code = response.text
     # return response.text --> do not have to return here, can create a python script with the robot code
+
+
+    # wite exec code here
+
+    def go_to_coords(manip, x, y, z, M):
+        print("getting angs")
+        s1, s2, s3 = inverse_kinematics.get_srvo_angles_for_coord_linear(x, y, z)  # PASS XYZ into this functions to get servo angles
+
+        print("ANGS ARE: ", s1, s2, s3)
+        time.sleep(2)
+        manip.send_signal(s1, s2, s3, M) 
+
+    def pick_and_drop(manip, pick_coords, drop_coords):
+        go_to_coords(manip, pick_coords[0], pick_coords[1], 50, 0)
+        time.sleep(3)
+        go_to_coords(manip, pick_coords[0], pick_coords[1], 10, 1)
+        time.sleep(2)
+        go_to_coords(manip, pick_coords[0], pick_coords[1], 50, 1)
+        time.sleep(1)
+        go_to_coords(manip, drop_coords[0], drop_coords[1], 50, 1)
+        time.sleep(3)
+        go_to_coords(manip, drop_coords[0], drop_coords[1], 15, 1)
+        time.sleep(2)
+        go_to_coords(manip, drop_coords[0], drop_coords[1], 15, 0)
+        time.sleep(2)
+
+    def clean_string(string):
+        return string.replace("```python", "").replace("```", "")
+    
+
+    generated_code = clean_string(generated_code)
+
+    
+    exec(generated_code)
+    
+
+
 
 if __name__ == "__main__":
     geminiCodeGenAgent.run()

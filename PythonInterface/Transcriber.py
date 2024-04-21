@@ -62,36 +62,43 @@ class Transcriber():
         quiet_frame_count = 0
         min_time_reached = False
 
-        while not min_time_reached or quiet_frame_count < silent_frames_required:
-            data = stream.read(self.frame_size, exception_on_overflow=False)
-            frames.append(data)
-            frame_count += 1
+        try:
+            while not min_time_reached or quiet_frame_count < silent_frames_required:
+                data = stream.read(self.frame_size, exception_on_overflow=False)
+                frames.append(data)
+                frame_count += 1
 
-            # Calculate the RMS of this frame
-            rms = audioop.rms(data, 2)  # Assuming the format is 16 bits per sample
-            if rms < self.quiet_threshold:
-                quiet_frame_count += 1
-            else:
-                quiet_frame_count = 0  # Reset if a loud frame is detected
+                # Calculate the RMS of this frame
+                rms = audioop.rms(data, 2)  # Assuming the format is 16 bits per sample
+                if rms < self.quiet_threshold:
+                    quiet_frame_count += 1
+                else:
+                    quiet_frame_count = 0  # Reset if a loud frame is detected
 
-            # Check if minimum recording time has been met
-            if frame_count >= min_frames:
-                min_time_reached = True
+                # Check if minimum recording time has been met
+                if frame_count >= min_frames:
+                    min_time_reached = True
 
-            # Debug output (optional, can be commented out in production)
-            if frame_count % 2 == 0 and self.verbose:
-                print(f"Frame {frame_count}: RMS={rms}, Quiet Frames Count={quiet_frame_count}")
+                # Debug output (optional, can be commented out in production)
+                if frame_count % 2 == 0 and self.verbose:
+                    print(f"Frame {frame_count}: RMS={rms}, Quiet Frames Count={quiet_frame_count}")
 
-        # Save the recorded audio to a file
-        audio_file = f"./audios/{ind}.wav"
-        wf = wave.open(audio_file, "wb")
-        wf.setnchannels(1)
-        wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
-        wf.setframerate(self.sample_rate)
-        wf.writeframes(b''.join(frames))
-        wf.close()
-        if self.verbose:
-            print(f"Recording saved to {audio_file}. Total frames recorded: {frame_count}")
+            # Save the recorded audio to a file
+            audio_file = f"./audios/{ind}.wav"
+            wf = wave.open(audio_file, "wb")
+            wf.setnchannels(1)
+            wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
+            wf.setframerate(self.sample_rate)
+            wf.writeframes(b''.join(frames))
+            wf.close()
+            if self.verbose:
+                print(f"Recording saved to {audio_file}. Total frames recorded: {frame_count}")
+
+            return True
+        except Exception as e:
+            print(e)
+            return False
+        
 
 
     def record_thread(self):
@@ -99,8 +106,11 @@ class Transcriber():
         p = pyaudio.PyAudio()
         stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8000)
         while True:
-            self.record(ind,p, stream, self.chunk_time)
-            ind += 1
+            if not self.record(ind,p, stream, self.chunk_time):
+                p = pyaudio.PyAudio()
+                stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8000)
+            else:
+                ind += 1
 
     def transcribe_thread(self):
         prev_ind = -1

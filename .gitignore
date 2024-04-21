@@ -1,4 +1,4 @@
-Python Interface/audios
-Python Interface/KinematicAPI/venv/
-Python Interface/__pycache__/ThreadStream.cpython-310.pyc
-Python Interface/KinematicAPI/angle_to_coord_map.json
+PythonInterface/audios
+PythonInterface/KinematicAPI/venv/
+PythonInterface/__pycache__/ThreadStream.cpython-310.pyc
+PythonInterface/KinematicAPI/angle_to_coord_map.json
