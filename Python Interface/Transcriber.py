@@ -79,7 +79,7 @@ class Transcriber():
                 min_time_reached = True
 
             # Debug output (optional, can be commented out in production)
-            if frame_count % 10 == 0 and self.verbose:
+            if frame_count % 2 == 0 and self.verbose:
                 print(f"Frame {frame_count}: RMS={rms}, Quiet Frames Count={quiet_frame_count}")
 
         # Save the recorded audio to a file
