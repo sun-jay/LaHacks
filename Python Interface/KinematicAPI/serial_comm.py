@@ -18,7 +18,7 @@ class Controller:
         # string must look like  "iii iii iii i". it must be 13 characters long, all angles will be 1-3 digits, so we need to pad with zeros
 
         # one liner
-        return " ".join([str(i).zfill(3) for i in self.current_position]) + '0' + str(self.mag)
+        return " ".join(     [str(i).rjust(3, "0") for i in self.current_position] + [str(int(self.mag))]  )
 
 
 
@@ -88,6 +88,7 @@ class Controller:
             angle_str = self.curr_pos_to_string()
             
             #send said string
+            print("SENDING THIS STRING: ", angle_str.encode())
             self.ser.write(angle_str.encode())
 
         except AssertionError as e:
