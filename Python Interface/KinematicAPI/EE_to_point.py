@@ -23,19 +23,19 @@ if __name__ == '__main__':
             
             time.sleep(1)
 
-            manip.send_signal(90,90,180,0)
+            manip.send_signal(6,130,106,1)
 
             time.sleep(5)
 
             while(True):
-                x, y, z, M = [float(item) for item in  input("Insert coords and mag as:  x y z M: ").split() ]
+                x, y, z, M = [float(item) for item in  input("Insert coords and mag as:  x y z M: ").split() ]  # TAKE INPUT 3 values and MAG
 
                 print("getting angs")
-                s1, s2, s3 = inverse_kinematics.get_srvo_angles_for_coord_linear(x,y,z)
+                s1, s2, s3 = inverse_kinematics.get_srvo_angles_for_coord_linear(x,y,z)         # PASS XYZ inot this functions to get servo angles
 
                 print("ANGS ARE: ", s1,s2,s3)
                 time.sleep(2)
-                manip.send_signal(s1,s2,s3,M)
+                manip.send_signal(s1,s2,s3,M)               # send the servo angles and 1/0 for mag
 
 
 
