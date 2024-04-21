@@ -7,38 +7,6 @@ from ThreadStream import ThreadStream
 from PIL import Image
 import tempfile
 
-class Transcript(Model):
-    transcript: str
-
-visionSystemAgent = Agent(
-    name = "VisionSystemAgent",
-    seed = "Vision system complex secret phrase",
-    port = "8000",
-    endpoint = ["http://0.0.0.0:8000/submit"]
-)
-
-class GeminiContext(Model):
-    user_transcript: str
-    image_file_path: str
-
-@visionSystemAgent.on_message(model = Transcript)
-async def transcript_handler(ctx: Context, sender: str, msg: Transcript):
-    visionSystem = VisionSystem()
-    ctx.logger.info("handler hit")
-    ctx.logger.info(f"Received message from {sender}: {msg.transcript}")
-
-    frame_np = visionSystem.ret_annnotated_frame()
-    image = Image.fromarray(frame_np)
-    
-    path = None
-    with tempfile.NamedTemporaryFile(delete = False, suffix = ".jpeg") as temp:
-        image.save(temp.name, 'JPEG')
-        path = temp.name
-        print(temp.name)
-
-    await ctx.send("agent1qfxrqyu4q06lk4kech230ty4yhes06lku0554rpcg5g3hgeuzj8e2uydl0q", GeminiContext(user_transcript = msg.transcript, image_file_path = path))
-    # await ctx.send(sender, Transcript(transcript=""))
-
 class VisionSystem:
     def __init__(self):
         self.stream = ThreadStream()
@@ -175,7 +143,7 @@ class VisionSystem:
         if ret:
         # mask = vision_system.create_mask_for_color(frame, (211,225,147))
             masks = self.create_individual_masks(frame)
-            # frame = self.apply_masks_on_image(frame, masks)
+            frame = self.apply_masks_on_image(frame, masks)
             centroids = self.ret_centroids(masks)
             frame = self.plot_centroids(frame, centroids)
             return frame
@@ -184,4 +152,5 @@ import asyncio
 
 # Use asyncio to run the above async function
 if __name__ == "__main__":
-    visionSystemAgent.run()
+    vs = VisionSystem()
+    vs.show_stream()

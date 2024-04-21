@@ -126,7 +126,7 @@ class Transcriber():
                 temp = self.full_text.lower()
                 if "assistant" in temp and "over" in temp:
                     # set the current command to the text in between assistant and over
-                    self.current_command = temp[temp.index("assistant")+len("assistant")+2:temp.index("over")]
+                    self.current_command = temp[temp.index("assistant")+len("assistant"):temp.index("over")]
                     self.full_text = ""
 
 
