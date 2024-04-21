@@ -16,30 +16,20 @@ visionSystemAgent = Agent(
     endpoint = ["http://0.0.0.0:8000/submit"]
 )
 
+class GeminiContext(Model):
+    user_transcript: str
+    captured_image: list
+
 @visionSystemAgent.on_message(model = Transcript)
-async def transcript_handler(ctx: Context, sender:str, msg: Transcript):
+async def transcript_handler(ctx: Context, sender: str, msg: Transcript):
     visionSystem = VisionSystem()
     ctx.logger.info("handler hit")
     ctx.logger.info(f"Received message from {sender}: {msg.transcript}")
-    while True:
-        ret, frame = visionSystem.stream.read()
-        if not ret:
-            break
-        # mask = vision_system.create_mask_for_color(frame, (211,225,147))
-        masks = visionSystem.create_individual_masks(frame)
-        frame = visionSystem.apply_masks_on_image(frame, masks)
-        centroids = visionSystem.ret_centroids(masks)
-        frame = visionSystem.plot_centroids(frame, centroids)
-        cv2.imshow('Stream', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-        
 
-    cv2.destroyAllWindows()
-    img = Image.fromarray(frame, "RGB")   
+    frame_np = visionSystem.ret_annnotated_frame()
 
-    
-    
+    frame_list = frame_np.tolist()
+    await ctx.send("agent1qfxrqyu4q06lk4kech230ty4yhes06lku0554rpcg5g3hgeuzj8e2uydl0q", GeminiContext(user_transcript = msg.transcript, captured_image = frame_list))
     # await ctx.send(sender, Transcript(transcript=""))
 
 class VisionSystem:
@@ -166,6 +156,16 @@ class VisionSystem:
             cv2.putText(image, label, text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
 
         return image
+    
+    def ret_annnotated_frame(self):
+        ret, frame = self.stream.read()
+        if ret:
+        # mask = vision_system.create_mask_for_color(frame, (211,225,147))
+            masks = self.create_individual_masks(frame)
+            frame = self.apply_masks_on_image(frame, masks)
+            centroids = self.ret_centroids(masks)
+            frame = self.plot_centroids(frame, centroids)
+            return frame
     
 import asyncio
 
