@@ -23,7 +23,7 @@ if __name__ == '__main__':
             
             time.sleep(1)
 
-            manip.send_signal(6,130,106,1)
+            manip.send_signal(000,118,127,0)
 
             time.sleep(5)
 
@@ -40,4 +40,5 @@ if __name__ == '__main__':
 
 
     finally:
+        manip.send_signal(000,118,127,0)
         manip.close_connection()

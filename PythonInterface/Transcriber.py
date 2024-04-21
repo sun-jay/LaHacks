@@ -173,5 +173,5 @@ import asyncio
 
 # Use asyncio to run the above async function
 if __name__ == "__main__":
-    test_class = Transcriber(constant_print=False, verbose = True)
+    test_class = Transcriber(constant_print=True, verbose = True)
     asyncio.run(test_class.main_process())

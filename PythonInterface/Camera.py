@@ -134,7 +134,7 @@ class VisionSystem:
             # Position the text near the centroid
             text_position = (cx + 10, cy)
             # Draw the text on the image
-            cv2.putText(image, label, text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+            cv2.putText(image, label, text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2, cv2.LINE_AA)
 
         return image
     
@@ -143,7 +143,7 @@ class VisionSystem:
         if ret:
         # mask = vision_system.create_mask_for_color(frame, (211,225,147))
             masks = self.create_individual_masks(frame)
-            frame = self.apply_masks_on_image(frame, masks)
+            # frame = self.apply_masks_on_image(frame, masks)
             centroids = self.ret_centroids(masks)
             frame = self.plot_centroids(frame, centroids)
             return frame
@@ -152,5 +152,5 @@ import asyncio
 
 # Use asyncio to run the above async function
 if __name__ == "__main__":
-    vs = VisionSystem()
-    vs.show_stream()
+    cam = VisionSystem()
+    cam.show_stream()

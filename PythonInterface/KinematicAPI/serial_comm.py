@@ -34,10 +34,16 @@ class Controller:
             print("No serial options found")
             return
         if len(options) > 1:
+            
             print("Choose a serial option:")
-            for i in range(len(options)):
-                print(f"{i}: {options[i]}")
-            choice = int(input())
+            # for i in range(len(options)):
+            #     print(f"{i}: {options[i]}")
+            # choice = int(input())
+
+            for i, option in enumerate(options):
+                if "3" in option:
+                    choice = i
+
 
             # #  choose the one with a 3 in it
             # choice = 0

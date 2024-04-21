@@ -166,7 +166,7 @@ class VisionSystem:
             # Position the text near the centroid
             text_position = (cx + 10, cy)
             # Draw the text on the image
-            cv2.putText(image, label, text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+            cv2.putText(image, label, text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2, cv2.LINE_AA)
 
         return image
     
