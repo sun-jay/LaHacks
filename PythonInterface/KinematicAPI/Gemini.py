@@ -17,11 +17,12 @@ class GeminiContext(Model):
     user_transcript: str
     image_file_path: str
 
+AGENT_MAILBOX_KEY = "9f0aea76-a1ef-48e4-a999-8778b482d5fe"
+
 geminiCodeGenAgent = Agent(
     name = "GeminiCodeGenAgent",
     seed = "Gemini code gen secret phrase",
-    port = "8001",
-    endpoint = ["http://0.0.0.0:8001/submit"]
+    mailbox = f"{AGENT_MAILBOX_KEY}@https://agentverse.ai"
 )
 
 gemini = None

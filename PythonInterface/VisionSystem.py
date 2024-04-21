@@ -10,11 +10,12 @@ import tempfile
 class Transcript(Model):
     transcript: str
 
+AGENT_MAILBOX_KEY = "2b217244-1f0f-48a5-9c1c-cf0a68a06888"
+
 visionSystemAgent = Agent(
     name = "VisionSystemAgent",
     seed = "Vision system complex secret phrase",
-    port = "8000",
-    endpoint = ["http://0.0.0.0:8000/submit"]
+    mailbox = f"{AGENT_MAILBOX_KEY}@https://agentverse.ai"
 )
 
 class GeminiContext(Model):
