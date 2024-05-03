@@ -1,3 +1,4 @@
+# Winner at LA Hacks 2024 under the Fetch.ai Sponsor track - [Devpost](https://devpost.com/software/agent-acumen)
 ## Inspiration
 The inspiration for Agent Acumen struck during a conversation with my aunt, an orthodontist, who shared her frustrations about how much of her workday is consumed by repetitive, low-level tasks. These tasks divert her attention from patient care, which is her primary role and passion. Realizing that language models like ChatGPT can manage intellectual tasks, it sparked the idea to extend this capability into physical tasks through a robotic system. This would allow healthcare professionals to focus more on patient interactions rather than mundane tasks.
 
