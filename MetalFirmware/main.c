@@ -62,12 +62,12 @@ static void MX_USART2_UART_Init(void);
 
 
 // BIG BUFFA
-char rec_arr[13] = "000 000 000 0";
+char rec_arr[13] = "006 130 106 0";
 //13 char
 int a1;
 int a2;
 int a3;
-int mag;
+int mag = 0;
 
 
 void parse_input_chars()
@@ -76,7 +76,7 @@ void parse_input_chars()
 	char ca2[4];
 	char ca3[4];
 
-	char cmag = '0';
+	char cmag[2];
 
 	//break this up:
 
@@ -100,6 +100,9 @@ void parse_input_chars()
 	ca3[2] = rec_arr[10];
 	ca3[3] = '\0';
 
+
+	cmag[0] = rec_arr[12];
+	cmag[1] = '\0';
 
 	a1 = atoi(ca1);
 	a2 = atoi(ca2);
@@ -131,6 +134,17 @@ void move_motors()
 	TIM1->CCR1 = t1;
 	TIM1->CCR2 = t2;
 	TIM1->CCR3 = t3;
+
+	if(mag == 1)
+	{
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
+
+	}
+	else if (mag == 0)
+	{
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
+
+	}
 
 
 }
@@ -179,13 +193,13 @@ int main(void)
   char eol[2] = "\n\r";
 
 
-  int m1_safe = 1000;
-  int m2_safe = 1000;
-  int m3_safe = 1000;
-
-	TIM1->CCR1 = m1_safe;
-	TIM1->CCR2 = m2_safe;
-	TIM1->CCR3 = m3_safe;
+//  int m1_safe = 1000;
+//  int m2_safe = 1000;
+//  int m3_safe = 1000;
+//
+//	TIM1->CCR1 = m1_safe;
+//	TIM1->CCR2 = m2_safe;
+//	TIM1->CCR3 = m3_safe;
 
 	//HAL_StatusTypeDef HAL_TIM_PWM_Start(TIM_HandleTypeDef *htim, uint32_t Channel)
 
@@ -193,6 +207,9 @@ int main(void)
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
 
+	//default pos
+	parse_input_chars();
+	move_motors();
   HAL_UART_Transmit(&huart2, start_msg, 24, 1000);
   HAL_UART_Transmit(&huart2, eol, 2, 1000);
 
@@ -206,7 +223,7 @@ int main(void)
 	  HAL_UART_Transmit(&huart2, query, 49, 1000);
 	  HAL_UART_Transmit(&huart2, eol, 2, 1000);
 
-	  HAL_UART_Receive(&huart2, rec_arr, 13, 10000);
+	  HAL_UART_Receive(&huart2, rec_arr, 13, 100000);
 
 	  HAL_UART_Transmit(&huart2, rec_arr, 13, 1000);
 	  HAL_UART_Transmit(&huart2, eol, 2, 1000);
@@ -401,9 +418,20 @@ static void MX_USART2_UART_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PA6 PA7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
 
